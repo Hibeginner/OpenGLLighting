@@ -35,46 +35,40 @@ bool CGfxOpenGL::Init() {
 	glEnable(GL_DEPTH_TEST);//深度测试，近的挡住远的
 	glDepthFunc(GL_LEQUAL);//深度测试小于等于算法。只有后者距离小于等于前者，就显示后者。距离摄像机的距离越小，越优先显示
 
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_LIGHTING);//启用光照。还需要激活灯光
-	GLfloat light_ambient[4] = { 0.3, 0.3, 0.3, 1.0};//环境光 0.3弱
-	GLfloat light_diffuse[4] = { 1.0, 1.0, 1.0, 1.0 };//漫反射光
-	GLfloat light_specular[4] = { 1.0, 1.0, 1.0, 1.0 };//镜面反射光
+	
+	GLfloat light_ambient[4] = { 0.3f, 0.3f, 0.3f, 1.0f};//环境光 0.3弱
+	GLfloat light_diffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };//漫反射光
+	GLfloat light_specular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };//镜面反射光
+
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);//定义灯光的属性
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+
 	GLfloat lightPos[4] = { 0,100,100,1 };//默认0,0,1的位置。第四个参数为1，为定点光。0平行光
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-	glEnable(GL_LIGHT0);//激活灯光
 
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);//设置衰减公式系数
+	//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.01f);//设置衰减公式系数
+	//glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);//设置衰减公式系数
 
-	//GLfloat pointSize;
-	//glGetFloatv(GL_POINT_SIZE, &pointSize);//点的大小，单位为像素
-	//ShowFloat(pointSize);
-
-	//if (!glIsEnabled(GL_POINT_SMOOTH)) {
-	//	glEnable(GL_POINT_SMOOTH);//对 GL_POINST 点 做平滑处理，显示成圆形。否则会是方形
-	//}
-
-	//GLfloat sizes[2];
-	//glGetFloatv(GL_POINT_SIZE_RANGE, sizes);//启用点的平滑处理后，OpenGL对点的大小有要求，小于或大于这个边界的点，处理就有问题
-	//GLfloat minPointSize = sizes[0];
-	//GLfloat maxPointSize = sizes[1];
-	//ShowFloat(minPointSize);
-	//ShowFloat(maxPointSize);
-
-	//GLfloat granularity;//颗粒度
-	//glGetFloatv(GL_POINT_SIZE_GRANULARITY, &granularity);
-	//ShowFloat(granularity);//0.125(应该是像素)这个间隔的点 画出来的效果最好。启用平滑处理后，画点的时候，点的大小会被OpenGL做成颗粒度的倍数
+	//glEnable(GL_LIGHT0);//激活灯光
 
 
-	//  1 / (a + b*d + c*d²)衰减系数   d为距离  默认a=1 b=0 c=0
-	//GLfloat att[3] = { 0.0, 0.0, 0.1 };
-	//glPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, att);//改变点的距离衰减
-														   //glPointParameteri(GL_POINT_SIZE_MAX, 2f);//衰减时，可以设置最大点大小 最小点大小 GL_POINT_FADE_THRESHOLD小的看不清 大的能看清的渐变
+	glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 
-														   //画线时也有线的粗细，斜线会出现锯齿。GL_LINE_SMOOTH可以设置抗锯齿
-														   //抗锯齿也有区间，也有颗粒度
+	GLfloat light1Pos[4] = { -0.5f, 1.0f, 1.0f, 1.0f };//默认0,0,1的位置。第四个参数为1，为定点光。0平行光。聚光灯是一个特殊的定点光
+	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);
+
+	//GLfloat spot_dir[3] = { -0.0f, -1.0f, -1.0f };
+	//glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spot_dir);//设置聚光灯方向
+
+	//glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0f);//设置聚光灯角度。圆锥角横截面角度的一半
+
+	glEnable(GL_LIGHT1);//把这个做成聚光灯
 
 	return true;
 }
@@ -201,7 +195,7 @@ void CGfxOpenGL::Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清空背景。变黑
 	glLoadIdentity();
 
-	gluLookAt(2.0f, 2.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(1.0f, 1.5f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 
 	/*
 	自发光（点光源） emissive
@@ -233,11 +227,11 @@ void CGfxOpenGL::Render() {
 surfaceColor = emissive + ambient + diffuse + specular
 	*/
 
-	GLfloat material_yellow[4] = {0.7, 0.6, 0.1, 1};//rgba
-	GLfloat material_white[4] = { 1, 1, 1, 1 };//rgba
-	GLfloat material_ambient[4] = { 0.5, 0.5, 0.5, 1 };//rgba
-	GLfloat material_black[4] = { 0.0, 0.0, 0.0, 1 };//rgba
-	GLfloat material_red[4] = { 0.8, 0.0, 0.0, 1 };//rgba
+	GLfloat material_yellow[4] = {0.7f, 0.6f, 0.1f, 1.0f};//rgba
+	GLfloat material_white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };//rgba
+	GLfloat material_ambient[4] = { 0.5f, 0.5f, 0.5f, 1.0f };//rgba
+	GLfloat material_black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };//rgba
+	GLfloat material_red[4] = { 0.8f, 0.0f, 0.0f, 1.0f };//rgba
 	glMaterialf(GL_FRONT, GL_EMISSION, 0);//物体的正面的“自发光”设为0，不发光。
 	glMaterialfv(GL_FRONT, GL_AMBIENT, material_ambient);//material_ambient材质的环境光反射系数 将会乘以 光源的环境光 0.3 *0.5 = 0.15
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, material_yellow);//材质的漫反射光系数。漫反射光的计算方法比环境光稍复杂。也是乘法。网上有公式
@@ -246,6 +240,36 @@ surfaceColor = emissive + ambient + diffuse + specular
 	//最终。自发光+环境光+漫反射光+镜面反射光=我们看到的颜色
 	glColor3f(1.0f, 0.0f, 0.0f);//启用光照后，glColor就不起效了
 	DrawCube(0.0, 0.0, 0.0);
+
+	glPushMatrix();
+		glTranslatef(0.0, 3.0, 0.0);
+		DrawCube(0.0, 0.0, 0.0);
+	glPopMatrix();
+
+	glPointSize(5.0f);
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glBegin(GL_POINTS);
+		GLfloat p[3] = { -0.5, 1, 1 };
+		glVertex3fv(p);
+	glEnd();
+
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_LINES);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glVertex3f(0, -1, -1);
+	glEnd();
+
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glBegin(GL_LINES);
+		glVertex3f(-5.0f, 0.0f, 0.0f);
+		glVertex3f(5.0f, 0.0f, 0.0f);
+
+		glVertex3f(0.0f, -5.0f, 0.0f);
+		glVertex3f(0.0f, 5.0f, 0.0f);
+
+		glVertex3f(0.0f, 0.0f, -5.0f);
+		glVertex3f(0.0f, 0.0f, 5.0f);
+	glEnd();
 
 	//glColor3f(7.0f, 1.0f, 0.3f);
 
