@@ -1,0 +1,6 @@
+﻿  CGfxOpenGL.cpp
+d:\vs_workspace\opengllighting\opengllighting\cgfxopengl.cpp(39): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+d:\vs_workspace\opengllighting\opengllighting\cgfxopengl.cpp(213): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+d:\vs_workspace\opengllighting\opengllighting\cgfxopengl.cpp(217): warning C4838: conversion from 'double' to 'GLfloat' requires a narrowing conversion
+  OpenGLLighting.vcxproj -> D:\VS_Workspace\OpenGLLighting\Debug\OpenGLLighting.exe
+  OpenGLLighting.vcxproj -> D:\VS_Workspace\OpenGLLighting\Debug\OpenGLLighting.pdb (Full PDB)
