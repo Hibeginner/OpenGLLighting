@@ -26,8 +26,72 @@ CGfxOpenGL::~CGfxOpenGL() {
 	
 }
 
+void CGfxOpenGL::DrawPlane(float size, float step) {
+	
+	glBegin(GL_QUADS);
+
+	glNormal3f(0.0f, -1.0f, 0.0f);
+	
+	for (float z = 0.0; z < size; z += step) {
+		for (float x = 0.0; x < size; x += step) {
+			glVertex3f(x, 0.0f, z);
+			glVertex3f(x + step, 0.0f, z);
+			glVertex3f(x + step, 0.0f, z + step);
+			glVertex3f(x, 0.0f, z + step);
+		}
+	}
+	
+	glEnd();
+}
+
+void CGfxOpenGL::DrawCube(float size, int resolution)
+{
+	float step = size / resolution;
+	glPushMatrix();
+		glTranslatef(-size / 2, -size / 2, -size / 2);
+		//top
+		glPushMatrix();
+			glTranslatef(0.0f, size, 0.0f);
+			glScalef(1.0f, -1.0f, 1.0f);
+			DrawPlane(size, step);
+		glPopMatrix();
+
+		//left
+		glPushMatrix();
+			glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+			glScalef(1.0f, -1.0f, 1.0f);
+			DrawPlane(size, step);
+		glPopMatrix();
+
+		//right
+		glPushMatrix();
+			glTranslatef(size, 0.0f, 0.0f);
+			glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+			DrawPlane(size, step);
+		glPopMatrix();
+
+		//front
+		glPushMatrix();
+			glTranslatef(0.0f, 0.0f, size);//3. 再平移
+			glRotatef(90.0f, -1.0f, 0.0f, 0.0f);//2. 在翻转
+			DrawPlane(size, step);//1. 先画出来
+		glPopMatrix();
+
+		//back
+		glPushMatrix();
+			glRotatef(90.0f, -1.0f, 0.0f, 0.0f);
+			glScalef(1.0f, -1.0f, 1.0f);
+			DrawPlane(size, step);
+		glPopMatrix();
+
+		//bottom
+		DrawPlane(size, step);
+	glPopMatrix();
+}
+
+static GLfloat light1_Pos[4] = { -5.0f, 10.0f, 10.0f, 1.0f };
+static GLfloat spot_dir[3] = { -1.0f, -2.5f, -10.0f };
 bool CGfxOpenGL::Init() {
-	theRobot = new Robot();
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	rotateAngle = 0;
@@ -35,6 +99,7 @@ bool CGfxOpenGL::Init() {
 	glEnable(GL_DEPTH_TEST);//深度测试，近的挡住远的
 	glDepthFunc(GL_LEQUAL);//深度测试小于等于算法。只有后者距离小于等于前者，就显示后者。距离摄像机的距离越小，越优先显示
 
+	glEnable(GL_NORMALIZE);//法线标准化处理
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glEnable(GL_LIGHTING);//启用光照。还需要激活灯光
 	
@@ -49,24 +114,24 @@ bool CGfxOpenGL::Init() {
 	GLfloat lightPos[4] = { 0,100,100,1 };//默认0,0,1的位置。第四个参数为1，为定点光。0平行光
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
-	//glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);//设置衰减公式系数
-	//glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.01f);//设置衰减公式系数
-	//glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);//设置衰减公式系数
+	glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);//设置衰减公式系数
+	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.01f);//设置衰减公式系数
+	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0f);//设置衰减公式系数
 
-	//glEnable(GL_LIGHT0);//激活灯光
+	glEnable(GL_LIGHT0);//激活灯光
 
 
 	glLightfv(GL_LIGHT1, GL_AMBIENT, light_ambient);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 
-	GLfloat light1Pos[4] = { -0.5f, 1.0f, 1.0f, 1.0f };//默认0,0,1的位置。第四个参数为1，为定点光。0平行光。聚光灯是一个特殊的定点光
-	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);
+	
+	glLightfv(GL_LIGHT1, GL_POSITION, light1_Pos);//默认0,0,1的位置。第四个参数为1，为定点光。0平行光。聚光灯是一个特殊的定点光
+	
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spot_dir);//设置聚光灯方向
 
-	//GLfloat spot_dir[3] = { -0.0f, -1.0f, -1.0f };
-	//glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spot_dir);//设置聚光灯方向
-
-	//glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0f);//设置聚光灯角度。圆锥角横截面角度的一半
+	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 7.5f);//设置聚光灯角度。圆锥角横截面角度的一半
+	glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 128);//聚光灯强度，中间强，周边弱
 
 	glEnable(GL_LIGHT1);//把这个做成聚光灯
 
@@ -74,7 +139,6 @@ bool CGfxOpenGL::Init() {
 }
 
 bool CGfxOpenGL::Shutdown() {
-	delete theRobot;
 	return true;
 }
 
@@ -123,7 +187,7 @@ void CGfxOpenGL::UpdateProjection(bool toggle) {
 
 	if (useProjective) {
 		//glFrustum(-1.0, 1.0, -1.0, 1.0, 1, 1000.0);//用来设置视椎体。透视
-		gluPerspective(52.0f, (GLfloat)m_windowWidth / (GLfloat)m_windowHeight, 1.0f, 1000.0f);//透视，近大远小。近裁剪面，远裁剪面。投影变换
+		gluPerspective(60.0f, (GLfloat)m_windowWidth / (GLfloat)m_windowHeight, 1.0f, 1000.0f);//透视，近大远小。近裁剪面，远裁剪面。投影变换
 	}
 	else
 	{
@@ -134,60 +198,7 @@ void CGfxOpenGL::UpdateProjection(bool toggle) {
 	glLoadIdentity();
 }
 
-void CGfxOpenGL::DrawCube(float xPos, float yPos, float zPos)
-{
-	glPushMatrix();//将前面的矩阵压入堆栈，下面的矩阵变换不会影响之前的矩阵（之前在Render方法里有模型视图矩阵的旋转平移）。下面的矩阵也是在世界坐标系里的。好像没有任何变化
-	
-	glTranslatef(xPos, yPos, zPos);
-	
-	glBegin(GL_QUADS);
-		glNormal3f(0.0f, 1.0f, 0.0f);//法线
-		glVertex3f(0.0f, 0.0f, 0.0f);//top 逆时针画四方形
-		glVertex3f(0.0f, 0.0f, -1.0f);
-		glVertex3f(-1.0f, 0.0f, -1.0f);
-		glVertex3f(-1.0f, 0.0f, 0.0f);
-
-		glNormal3f(0.0f, 0.0f, 1.0f);//法线
-		glVertex3f(0.0f, 0.0f, 0.0f);//front
-		glVertex3f(-1.0f, 0.0f, 0.0f);
-		glVertex3f(-1.0f, -1.0f, 0.0f);
-		glVertex3f(0.0f, -1.0f, 0.0f);
-
-		glNormal3f(1.0f, 0.0f, 0.0f);//法线
-		glVertex3f(0.0f, 0.0f, 0.0f);//right
-		glVertex3f(0.0f, -1.0f, 0.0f);
-		glVertex3f(0.0f, -1.0f, -1.0f);
-		glVertex3f(0.0f, 0.0f, -1.0f);
-
-		glNormal3f(-1.0f, 0.0f, 0.0f);//法线
-		glVertex3f(-1.0f, 0.0f, 0.0f);//left
-		glVertex3f(-1.0f, 0.0f, -1.0f);
-		glVertex3f(-1.0f, -1.0f, -1.0f);
-		glVertex3f(-1.0f, -1.0f, 0.0f);
-
-		glNormal3f(0.0f, -1.0f, 0.0f);//法线
-		glVertex3f(0.0f, -1.0f, 0.0f);//bottom
-		glVertex3f(0.0f, -1.0f, -1.0f);
-		glVertex3f(-1.0f, -1.0f, -1.0f);
-		glVertex3f(-1.0f, -1.0f, 0.0f);
-
-		glNormal3f(0.0f, 0.0f, -1.0f);//法线
-		glVertex3f(0.0f, 0.0f, -1.0f);//back
-		glVertex3f(-1.0f, 0.0f, -1.0f);
-		glVertex3f(-1.0f, -1.0f, -1.0f);
-		glVertex3f(0.0f, -1.0f, -1.0f);
-	glEnd();
-
-	glPopMatrix();
-}
-
 void CGfxOpenGL::Prepare(float dt) {
-	rotateAngle += 45.0f * dt;
-	if (rotateAngle >= 360) {
-		rotateAngle = 0;
-	}
-
-	theRobot->Prepare(dt);
 }
 
 void CGfxOpenGL::Render() {
@@ -195,7 +206,8 @@ void CGfxOpenGL::Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清空背景。变黑
 	glLoadIdentity();
 
-	gluLookAt(1.0f, 1.5f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	//gluLookAt(1.0f, 1.5f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(9.0f, 9.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 
 	/*
 	自发光（点光源） emissive
@@ -229,37 +241,32 @@ surfaceColor = emissive + ambient + diffuse + specular
 
 	GLfloat material_yellow[4] = {0.7f, 0.6f, 0.1f, 1.0f};//rgba
 	GLfloat material_white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };//rgba
-	GLfloat material_ambient[4] = { 0.5f, 0.5f, 0.5f, 1.0f };//rgba
+	GLfloat material_ambient[4] = { 0.15f, 0.15f, 0.15f, 1.0f };//rgba
 	GLfloat material_black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };//rgba
 	GLfloat material_red[4] = { 0.8f, 0.0f, 0.0f, 1.0f };//rgba
+
 	glMaterialf(GL_FRONT, GL_EMISSION, 0);//物体的正面的“自发光”设为0，不发光。
 	glMaterialfv(GL_FRONT, GL_AMBIENT, material_ambient);//material_ambient材质的环境光反射系数 将会乘以 光源的环境光 0.3 *0.5 = 0.15
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, material_yellow);//材质的漫反射光系数。漫反射光的计算方法比环境光稍复杂。也是乘法。网上有公式
 	glMaterialfv(GL_FRONT, GL_SPECULAR, material_black);//镜面反射光系数。系数为0，就是没有
 	glMaterialf(GL_FRONT, GL_SHININESS, 0.0f);//光泽度系数。计算镜面反射光时用到。
 	//最终。自发光+环境光+漫反射光+镜面反射光=我们看到的颜色
-	glColor3f(1.0f, 0.0f, 0.0f);//启用光照后，glColor就不起效了
-	DrawCube(0.0, 0.0, 0.0);
-
-	glPushMatrix();
-		glTranslatef(0.0, 3.0, 0.0);
-		DrawCube(0.0, 0.0, 0.0);
-	glPopMatrix();
-
-	glPointSize(5.0f);
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glBegin(GL_POINTS);
-		GLfloat p[3] = { -0.5, 1, 1 };
-		glVertex3fv(p);
-	glEnd();
-
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glBegin(GL_LINES);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-		glVertex3f(0, -1, -1);
-	glEnd();
-
 	glColor3f(1.0f, 1.0f, 1.0f);
+	glPushMatrix();
+		glTranslatef(-7.0f, 0.0f, 0.0f);
+		DrawCube(9.0, 256);//边长，分辨率
+	glPopMatrix();
+/*
+	
+	glPointSize(15.0f);
+	glBegin(GL_POINTS);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glVertex3f(light1_Pos[0], light1_Pos[1], light1_Pos[2]);
+		glVertex3f((light1_Pos[0] + spot_dir[0]), (light1_Pos[1] + spot_dir[1]), (light1_Pos[2] + spot_dir[2]));
+	glEnd();
+
+	glColor3f(1.0f, 1.0f, 0.0f);
 	glBegin(GL_LINES);
 		glVertex3f(-5.0f, 0.0f, 0.0f);
 		glVertex3f(5.0f, 0.0f, 0.0f);
@@ -269,83 +276,16 @@ surfaceColor = emissive + ambient + diffuse + specular
 
 		glVertex3f(0.0f, 0.0f, -5.0f);
 		glVertex3f(0.0f, 0.0f, 5.0f);
-	glEnd();
-
-	//glColor3f(7.0f, 1.0f, 0.3f);
-
-	//float pointSize = 0.5f;
-	//for (float point = -4.0f; point < 5.0f; point += 0.5f) {
-	//	glPointSize(pointSize);
-
-	//	glBegin(GL_POINTS);
-	//	    //glVertex3f(0.0f, 0.0f, 0.0f);
-	//		//glVertex2i((GLint)point, 0);
-	//		GLfloat p[3] = {point, 0.0f, 0.0f};
-	//		glVertex3fv(p);
-	//	glEnd();
-
-	//	pointSize += 1.0f;
-	//}
 
 
-	/*glBegin(GL_TRIANGLES);
 
-	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(1.0f, 1.0f, 0.0f);
+		glVertex3f(0.0f, 0.0f, 0.0f);
+		glVertex3f(spot_dir[0], spot_dir[1], spot_dir[2]);
 
+		glVertex3f(light1_Pos[0], light1_Pos[1], light1_Pos[2]);
+		glVertex3f( (light1_Pos[0] + spot_dir[0]), (light1_Pos[1] + spot_dir[1]), (light1_Pos[2] + spot_dir[2]));
+
+		glVertex3f(light1_Pos[0], light1_Pos[1], light1_Pos[2]);
+		glVertex3f(-6.0f, 7.5f, 0.0f);
 	glEnd();*/
-
-
-	/*glPointSize(9.5f);
-	glBegin(GL_POINTS);
-	glVertex3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f( 1.0f, 0.0f, -2.0f);
-	glEnd();*/
-
-	//glEnable(GL_LINE_STIPPLE);//画虚线
-
-	//glLineStipple(2, 0xAAAA);//1010 1010 1010 1010  虚线像素是否显示 和这个序列是相反的。第一个参数2，是每一位重复的次数 11001100 11001100 ..
-	//						 //目前表示 2个像素画 2个像素不画
-
-	//glLineWidth(6.55);
-	//glBegin(GL_LINES);
-	//glVertex3f(-5.0f, 0.0f, 0.0f);
-	//glVertex3f(5.0f, 0.0f, -2.0f);
-	//glEnd();
-
-	//glPolygonMode(GL_FRONT, GL_LINE);//正面、线框的样式。默认GL_FRONT_AND_BACK,GL_FILL
-	//glCullFace(GL_BACK);//指定要剔除的面为背面。背面不画
-	//glEnable(GL_CULL_FACE);//启动“剔除面”
-	//glFrontFace(GL_CW);//设置正面，为顺时针。默认是GL_CCW与三角形画的顺序有关
-	//glBegin(GL_TRIANGLES);//GL_TRIANGLE_STRIP三角形带（逆时针画三角形） GL_TRIANGLE_FAN（扇形）起点公用
-	//glEdgeFlag(GL_TRUE);//控制边显不显示
-	//glVertex3f(0.0, 5.0, 0.0);
-	//glVertex3f(0.0, 0.0, 0.0);
-	//glVertex3f(3.0, 5.0, 0.0);
-	//glEnd();
-
-	//GL_QUADS四边形
-	//GL_QUAD_STRIP四边形带 有顺序的  上下上下
-	//GL_POLYGON逆时针方向连续多个定点
-
-	/*glBegin(GL_TRIANGLES);
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(0.0, 5.0, 0.0);
-	glColor3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(0.0, 0.0, 0.0);
-	glColor3f(0.0f, 0.0f, 1.0f);
-	glVertex3f(3.0, 5.0, 0.0);
-	glEnd();*/
-
-	//glShadeModel(GL_FLAT);//颜色的单调模式，画顶点时 只能用一种颜色。直线、三角形、四边形最后一个点的颜色，线段使用的分线段中的第二个颜色。多边形使用的第一个顶点颜色。GL_SMOOTH平滑，差值渐变
-
-
-	//glPushMatrix();//把模型视图矩阵压栈。会把当前状态压入第二层，不过此时栈顶的矩阵也与第二层的相同
-	//	glLoadIdentity();
-	//	glTranslatef(0.0f, 0.0f, -30.0f);
-	//	glRotated(rotateAngle, 0.0f, 1.0f, 0.0f);
-	//	theRobot->DrawRobot(0.0, 0.0, 0.0);
-
-	//glPopMatrix();//当经过一系列的变换后，栈顶矩阵被修改，此时调用glPopMatrix()时，栈顶矩阵被弹出，且又会恢复为原来的状态。
 }
